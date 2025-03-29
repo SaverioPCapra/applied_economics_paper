@@ -266,3 +266,57 @@ def plot_3d_clusters(x_pca_rendered, centroids, title="Graph"):
     ))
 
     fig.show()
+
+from sklearn.cluster import DBSCAN
+from sklearn.neighbors import NearestNeighbors 
+from sklearn.preprocessing import StandardScaler
+from sklearn.decomposition import PCA
+
+import pandas as pd
+import numpy as np
+
+from pyclustering.cluster.kmeans import kmeans, kmeans_visualizer
+from pyclustering.cluster.center_initializer import kmeans_plusplus_initializer
+from pyclustering.utils.metric import distance_metric, type_metric
+from pyclustering.cluster import kmedoids, silhouette
+from sklearn.metrics import pairwise_distances
+import random
+
+
+def clustering_medoids_quick(data, n_comp, dist_metric, n_clusters, plot = "no"):
+    scaler = StandardScaler()
+    s_data = scaler.fit_transform(data)
+
+    pca = PCA(n_components = n_comp, random_state=1)
+    data_pca = pca.fit_transform(s_data)
+
+    print("Total variance explained by the PCA", pca.explained_variance_ratio_.sum())
+
+    distance_matrix = pairwise_distances(data_pca, metric=dist_metric)
+
+    k = n_clusters
+    num_data_points = len(data_pca)
+
+    initial_medoids = random.sample(range(num_data_points), k)
+
+    kmedoids_instance = kmedoids.kmedoids(distance_matrix, initial_medoids, data_type='distance_matrix')
+    kmedoids_instance.process()
+    clusters = kmedoids_instance.get_clusters()
+
+    silhouette_instance = silhouette.silhouette(data_pca, clusters)
+    silhouette_score = silhouette_instance.process().get_score()
+
+    print("Silhouette Score:", np.mean(silhouette_score))
+
+    labels = np.zeros(len(data_pca), dtype=int)
+    for i, cluster in enumerate(clusters):
+        labels[cluster] = i
+    
+    if plot == "yes":
+        plt.scatter(data_pca[:, 0], data_pca[:, 1], c=labels)
+        plt.xlabel("Principal Component 1")
+        plt.ylabel("Principal Component 2")
+        plt.title("K-Medoids Clustering Results")
+        plt.show()
+    
+    return labels
