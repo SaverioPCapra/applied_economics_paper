@@ -286,11 +286,11 @@ from sklearn.metrics import pairwise_distances
 import random
 
 
-def clustering_medoids_quick(data, n_comp, dist_metric, n_clusters, plot = "no"):
+def clustering_medoids_quick(data, n_comp, dist_metric, n_clusters, plot="no"):
     scaler = StandardScaler()
     s_data = scaler.fit_transform(data)
 
-    pca = PCA(n_components = n_comp, random_state=1)
+    pca = PCA(n_components=n_comp, random_state=1)
     data_pca = pca.fit_transform(s_data)
 
     print("Total variance explained by the PCA", pca.explained_variance_ratio_.sum())
@@ -314,12 +314,22 @@ def clustering_medoids_quick(data, n_comp, dist_metric, n_clusters, plot = "no")
     labels = np.zeros(len(data_pca), dtype=int)
     for i, cluster in enumerate(clusters):
         labels[cluster] = i
-    
+
+    medoid_indices = kmedoids_instance.get_medoids()
+    medoid_centers_pca = data_pca[medoid_indices]
+
+    # Inverse PCA Transformation
+    medoid_centers_scaled = pca.inverse_transform(medoid_centers_pca)
+
+    # Inverse Standard Scaler Transformation
+    medoid_centers_original = scaler.inverse_transform(medoid_centers_scaled)
+
     if plot == "yes":
         plt.scatter(data_pca[:, 0], data_pca[:, 1], c=labels)
+        plt.scatter(medoid_centers_pca[:, 0], medoid_centers_pca[:, 1], marker='x', s=200, c='red')
         plt.xlabel("Principal Component 1")
         plt.ylabel("Principal Component 2")
         plt.title("K-Medoids Clustering Results")
         plt.show()
-    
-    return labels
+
+    return labels, medoid_centers_original
