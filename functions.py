@@ -43,10 +43,13 @@ def create_regression_table(data, outcome, predictors_list, control_sets, signif
 
         if robust == "yes":
             model = sm.RLM(y, X, M=sm.robust.norms.HuberT()).fit()
+            r_squared[i] = "N/A (Robust)"
         else:
             model = sm.OLS(y, X).fit(cov_type="HC3")
+            r_squared[i] = model.rsquared
 
         observations[i] = model.nobs
+        
         if isinstance(model, sm.regression.linear_model.OLSResults):
             r_squared[i] = model.rsquared
         else:
@@ -92,7 +95,7 @@ def create_regression_table(data, outcome, predictors_list, control_sets, signif
 
     table_data.append(["Observations"] + [observations[i] for i in range(len(control_sets))])
     table_data.append(["R-squared"] + [r_squared[i] for i in range(len(control_sets))])
-    table = tabulate(table_data, headers=headers, tablefmt="pipe")
+    table = tabulate(table_data, headers=headers, tablefmt="latex")
     return table
 
 def randomization_inference(df, treatment_col, y_col, percentile_input = 5, n_permutations = 1000, robust = None):
